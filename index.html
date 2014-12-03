@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"> 
+<title>JScale Example Page</title>
+<script type="text/javascript" src="jscaler.js"></script>
+<script type="text/javascript">
+	function scale(alg, s) {
+		var threshold = parseInt(document.getElementById('threshold').value);
+		scaler.setThreshold(threshold).scale(alg, s).render(document.getElementById('canvas'));
+		scaler.reset();
+	}
+	window.onload = function() {
+		scaler = JScaler(document.getElementById('image'));
+	};
+</script>
+</head>
+<body>
+	<img id="image" src="image.png" alt="pixel art" />
+	<br />
+	Threshold: <input id="threshold" type="number" name="threshold" value="0" />
+	<br />
+	<a href="#" onClick="scale('nearest', 2);">Nearest-Neighbor (2x)</a>
+	<br />
+	<a href="#" onClick="scale('nearest', 3);">Nearest-Neighbor (3x)</a>
+	<br />
+	<a href="#" onClick="scale('AdvMAME', 2);">AdvMAME2x/Scale2x/EPX</a>
+	<br />
+	<a href="#" onClick="scale('AdvMAME', 3);">AdvMAME3x/Scale3x</a>
+	<br />
+	<a href="#" onClick="scale('eagle', 2);">Eagle (2x)</a>
+	<br />
+	<a href="#" onClick="scale('eagle', 3);">Eagle (3x)</a>
+	<br />
+	<a href="#" onClick="scale('eagle3xr');">Eagle (3xr)</a>
+	<br />
+	<canvas id="canvas"></canvas>
+</body>
+</html>
