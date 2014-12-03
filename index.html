@@ -1,38 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8"> 
+<meta charset="UTF-8">
 <title>JScale Example Page</title>
 <script type="text/javascript" src="jscaler.js"></script>
 <script type="text/javascript">
-	function scale(alg, s) {
-		var threshold = parseInt(document.getElementById('threshold').value);
-		scaler.setThreshold(threshold).scale(alg, s).render(document.getElementById('canvas'));
-		scaler.reset();
+	function thresh() {
+		return parseInt(document.getElementById('threshold').value);
 	}
 	window.onload = function() {
 		scaler = JScaler(document.getElementById('image'));
+		canvas = document.getElementById('canvas');
 	};
+
+	function upload() {
+		var file = document.querySelector('input[type=file]').files[0]; //sames as here
+		var reader = new FileReader();
+
+		reader.onloadend = function() {
+			var img = document.getElementById('image');
+			img.onload = function() {
+				scaler = JScaler(img);
+			};
+			img.src = reader.result;
+		}
+
+		if (file)
+			reader.readAsDataURL(file); //reads the data as a URL
+	}
 </script>
 </head>
 <body>
+	<input name="image" type="file" accept="file/image" onChange="upload();" />
+	<br />
 	<img id="image" src="image.png" alt="pixel art" />
+	<br /> Threshold:
+	<input id="threshold" type="number" name="threshold" value="0" />
 	<br />
-	Threshold: <input id="threshold" type="number" name="threshold" value="0" />
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 2).render(canvas).reset(); return false;">Nearest-Neighbor (2x)</a>
 	<br />
-	<a href="" onClick="scale('nearest', 2); return false;">Nearest-Neighbor (2x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 3).render(canvas).reset(); return false;">Nearest-Neighbor (3x)</a>
 	<br />
-	<a href="" onClick="scale('nearest', 3); return false;">Nearest-Neighbor (3x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 4).render(canvas).reset(); return false;">Nearest-Neighbor (4x)</a>
 	<br />
-	<a href="" onClick="scale('AdvMAME', 2); return false;">AdvMAME2x/Scale2x/EPX</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 2).render(canvas).reset(); return false;">AdvMAME2x/Scale2x/EPX</a>
 	<br />
-	<a href="" onClick="scale('AdvMAME', 3); return false;">AdvMAME3x/Scale3x</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 3).render(canvas).reset(); return false;">AdvMAME3x/Scale3x</a>
 	<br />
-	<a href="" onClick="scale('eagle', 2); return false;">Eagle (2x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 2).scale('AdvMAME', 2).render(canvas).reset(); return false;">AdvMAME4x/Scale4x</a>
 	<br />
-	<a href="" onClick="scale('eagle', 3); return false;">Eagle (3x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle (2x)</a>
 	<br />
-	<a href="" onClick="scale('eagle3xr'); return false;">Eagle (3xr)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 3).render(canvas).reset(); return false;">Eagle (3x)</a>
+	<br />
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle3xr').render(canvas).reset(); return false;">Eagle (3xr)</a>
+	<br />
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle
+		(4x)</a>
 	<br />
 	<canvas id="canvas"></canvas>
 </body>

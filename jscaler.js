@@ -17,7 +17,7 @@ JScaler = (function() {
 		else if (image instanceof HTMLCanvasElement)
 			imgData = image.getContext('2d').getImageData(0, 0, image.width, image.height);
 		else
-			throw 'arg must be image or canvas element';
+			throw 'arg must be image or canvas element, not ' + typeof image;
 
 		// convert to 2d binary array
 		var data = new Array(image.height);
@@ -57,7 +57,7 @@ JScaler = (function() {
 			case 3:
 				return algs.advmame3x(eq, data);
 			default:
-				throw 'invalid scale';
+				throw 'invalid scale ' + s;
 			}
 		},
 		advmame2x : function(eq, data) {
@@ -170,7 +170,7 @@ JScaler = (function() {
 			case 3:
 				return algs.eagle3x(eq, data);
 			default:
-				throw 'invalid scale';
+				throw 'invalid scale ' + s;
 			}
 		},
 		eagle2x : function(eq, data) {
@@ -388,7 +388,7 @@ JScaler = (function() {
 			else if (image instanceof HTMLImageElement)
 				canvas = document.createElement('canvas');
 			else
-				throw 'argument must be a image or canvas element';
+				throw 'argument must be a image or canvas element, not ' + typeof image;
 			canvas.width = this.data[0].length;
 			canvas.height = this.data.length;
 			var context = canvas.getContext('2d');
