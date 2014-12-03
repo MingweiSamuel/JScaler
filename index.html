@@ -37,26 +37,33 @@
 	<br /> Threshold:
 	<input id="threshold" type="number" value="0" />
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 2).render(canvas).reset(); return false;">Nearest-Neighbor (2x)</a>
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 3).render(canvas).reset(); return false;">Nearest-Neighbor (3x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', parseFloat(document.getElementById('nearest').value)).render(canvas).reset(); return false;">Nearest-Neighbor</a>
+	<input id="nearest" type="number" step="any" value="0" />
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 4).render(canvas).reset(); return false;">Nearest-Neighbor (4x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('linear', parseFloat(document.getElementById('linear').value)).render(canvas).reset(); return false;">Linear</a>
+	<input id="linear" type="number" step="any" value="0" />
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 2).render(canvas).reset(); return false;">AdvMAME2x/Scale2x/EPX</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('cubic', parseFloat(document.getElementById('cubic').value)).render(canvas).reset(); return false;">Cubic</a>
+	<input id="cubic" type="number" step="any" value="0" />
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 3).render(canvas).reset(); return false;">AdvMAME3x/Scale3x</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', parseInt(document.getElementById('advmame').value)).render(canvas).reset(); return false;">AdvMAME/Scale</a>
+	<select id="advmame">
+		<option value="2">2x</option>
+		<option value="3">3x</option>
+		<option value="4">4x</option>
+	</select>
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', 2).scale('AdvMAME', 2).render(canvas).reset(); return false;">AdvMAME4x/Scale4x</a>
-	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle (2x)</a>
-	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 3).render(canvas).reset(); return false;">Eagle (3x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', parseInt(document.getElementById('eagle').value)).render(canvas).reset(); return false;">Eagle</a>
+	<select id="eagle">
+		<option value="2">2x</option>
+		<option value="3">3x</option>
+		<option value="4">4x</option>
+	</select>
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle3xr').render(canvas).reset(); return false;">Eagle (3xr)</a>
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle (4x)</a>
-	<br />
+
 	<canvas id="canvas"></canvas>
 </body>
 </html>

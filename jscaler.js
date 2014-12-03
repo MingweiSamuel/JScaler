@@ -34,11 +34,41 @@ JScaler = (function() {
 		}
 		return data;
 	}
+	/**
+	 * Linear interpolation x is the first color y is the second color d is the
+	 * distance (0-1) between x and y
+	 */
 	function interpolateLinear(x, y, d) {
 		var r = Math.floor((0xFF & x >> 24) * (1 - d) + (0xFF & y >> 24) * d);
 		var g = Math.floor((0xFF & x >> 16) * (1 - d) + (0xFF & y >> 16) * d);
 		var b = Math.floor((0xFF & x >> 8) * (1 - d) + (0xFF & y >> 8) * d);
 		var a = Math.floor((0xFF & x) * (1 - d) + (0xFF & y) * d);
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	}
+	/**
+	 * Cubic interpolation
+	 */
+	function interpolateCubic(x, y, z, w, d) {
+		var xr = 0xFF & x >> 24;
+		var xg = 0xFF & x >> 16;
+		var xb = 0xFF & x >> 8;
+		var xa = 0xFF & x;
+		var yr = 0xFF & y >> 24;
+		var yg = 0xFF & y >> 16;
+		var yb = 0xFF & y >> 8;
+		var ya = 0xFF & y;
+		var zr = 0xFF & z >> 24;
+		var zg = 0xFF & z >> 16;
+		var za = 0xFF & z >> 8;
+		var zb = 0xFF & z;
+		var wr = 0xFF & w >> 24;
+		var wg = 0xFF & w >> 16;
+		var wa = 0xFF & w >> 8;
+		var wb = 0xFF & w;
+		var r = 0xFF & (yr + 0.5 * d * (zr - xr + d * (2 * xr - 5 * yr + 4 * zr - wr + d * (3 * (yr - zr) + wr - xr))));
+		var g = 0xFF & (yg + 0.5 * d * (zg - xg + d * (2 * xg - 5 * yg + 4 * zg - wg + d * (3 * (yg - zg) + wg - xg))));
+		var b = 0xFF & (yb + 0.5 * d * (zb - xb + d * (2 * xb - 5 * yb + 4 * zb - wb + d * (3 * (yb - zb) + wb - xb))));
+		var a = 0xFF & (ya + 0.5 * d * (za - xa + d * (2 * xa - 5 * ya + 4 * za - wa + d * (3 * (ya - za) + wa - xa))));
 		return (r << 24) | (g << 16) | (b << 8) | a;
 	}
 
@@ -64,7 +94,7 @@ JScaler = (function() {
 				var yr = data.length * y / newData.length;
 				for (var x = 0; x < newData[0].length; x++) {
 					var xr = data[0].length * x / newData[0].length;
-					
+
 					/*
 					 * c0--c01--c1
 					 *      |
@@ -82,11 +112,97 @@ JScaler = (function() {
 						c2 = c0;
 						c3 = c1;
 					}
-					
+
 					var c01 = interpolateLinear(c0, c1, xr % 1);
 					var c23 = interpolateLinear(c2, c3, xr % 1);
-					
+
 					newData[y][x] = interpolateLinear(c01, c23, yr % 1);
+				}
+			}
+			return newData;
+		},
+		cubic : function(eq, data, s) {
+			(typeof s !== 'undefined') || (s = 2);
+			var newData = new Array(Math.floor(data.length * s));
+			for (var y = 0; y < newData.length; y++) {
+				newData[y] = new Array(Math.floor(data[0].length * s));
+				var yr = data.length * y / newData.length;
+				for (var x = 0; x < newData[0].length; x++) {
+					var xr = data[0].length * x / newData[0].length;
+
+					/*
+					 *   :	x0   x1    x2   x3	
+					 *   :
+					 * y0:	l0 - l4 m0 r4 - r0
+					 * y1:	l1 - l5 m1 r5 - r1
+					 * y2:	l2 - l6 m2 r6 - r2
+					 * y3:	l3 - l7 m3 r7 - r3
+					 */
+					var y0 = Math.floor(yr) - 1;
+					var y1 = Math.floor(yr);
+					var y2 = Math.ceil(yr);
+					var y3 = Math.ceil(yr) + 1;
+
+					var x0 = Math.floor(xr) - 1;
+					var x1 = Math.floor(xr);
+					var x2 = Math.ceil(xr);
+					var x3 = Math.ceil(xr) + 1;
+
+					//y1
+					var l5 = data[y1][x1];
+					var l1 = (x0 >= 0) ? data[y1][x0] : l5;
+					var r5 = (x2 < data[0].length) ? data[y1][x2] : l5;
+					var r1 = (x3 < data[0].length) ? data[y1][x3] : r5;
+
+					//y0
+					if (y0 >= 0) {
+						var l4 = data[y0][x1];
+						var l0 = (x0 >= 0) ? data[y0][x0] : l4;
+						var r4 = (x2 < data[0].length) ? data[y0][x2] : l4;
+						var r0 = (x3 < data[0].length) ? data[y0][x3] : r4;
+					}
+					else {
+						var l4 = l5;
+						var l0 = l1;
+						var r4 = r5;
+						var r0 = r1;
+					}
+
+					//y2
+					if (y2 < data.length) {
+						var l6 = data[y2][x1];
+						var l2 = (x0 >= 0) ? data[y2][x0] : l6;
+						var r6 = (x2 < data[0].length) ? data[y2][x2] : l6;
+						var r2 = (x3 < data[0].length) ? data[y2][x3] : r6;
+					}
+					else {
+						var l6 = l5;
+						var l2 = l1;
+						var r6 = r5;
+						var r2 = r1;
+					}
+
+					//y3
+					if (y3 < data.length) {
+						var l7 = data[y3][x1];
+						var l3 = (x0 >= 0) ? data[y3][x0] : l7;
+						var r7 = (x2 < data[0].length) ? data[y3][x2] : l7;
+						var r3 = (x3 < data[0].length) ? data[y3][x3] : r7;
+					}
+					else {
+						var l7 = l6;
+						var l3 = l2;
+						var r7 = r6;
+						var r3 = r2;
+					}
+
+					var d = xr % 1;
+					var m0 = interpolateCubic(l0, l4, r4, r0, d);
+					var m1 = interpolateCubic(l1, l5, r5, r1, d);
+					var m2 = interpolateCubic(l2, l6, r6, r2, d);
+					var m3 = interpolateCubic(l3, l7, r7, r3, d);
+
+					newData[y][x] = interpolateCubic(m0, m1, m2, m3, yr % 1);
 				}
 			}
 			return newData;
@@ -97,6 +213,8 @@ JScaler = (function() {
 				return algs.advmame2x(eq, data);
 			case 3:
 				return algs.advmame3x(eq, data);
+			case 4:
+				return algs.advmame2x(eq, algs.advmame2x(eq, data));
 			default:
 				throw 'invalid scale ' + s;
 			}
@@ -210,6 +328,8 @@ JScaler = (function() {
 				return algs.eagle2x(eq, data);
 			case 3:
 				return algs.eagle3x(eq, data);
+			case 4:
+				return algs.eagle2x(eq, algs.eagle2x(eq, data));
 			default:
 				throw 'invalid scale ' + s;
 			}
