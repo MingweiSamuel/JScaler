@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JScale Example Page</title>
+<title>JScaler Example Page</title>
 <script type="text/javascript" src="jscaler.js"></script>
 <script type="text/javascript">
 	function thresh() {
@@ -31,11 +31,11 @@
 </script>
 </head>
 <body>
-	<input name="image" type="file" accept="file/image" onChange="upload();" />
+	<input type="file" accept="file/image" onChange="upload();" />
 	<br />
 	<img id="image" src="image.png" alt="pixel art" />
 	<br /> Threshold:
-	<input id="threshold" type="number" name="threshold" value="0" />
+	<input id="threshold" type="number" value="0" />
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', 2).render(canvas).reset(); return false;">Nearest-Neighbor (2x)</a>
 	<br />
@@ -55,8 +55,7 @@
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle3xr').render(canvas).reset(); return false;">Eagle (3xr)</a>
 	<br />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle
-		(4x)</a>
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle', 2).scale('Eagle', 2).render(canvas).reset(); return false;">Eagle (4x)</a>
 	<br />
 	<canvas id="canvas"></canvas>
 </body>

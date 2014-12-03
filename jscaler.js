@@ -34,18 +34,59 @@ JScaler = (function() {
 		}
 		return data;
 	}
+	function interpolateLinear(x, y, d) {
+		var r = Math.floor((0xFF & x >> 24) * (1 - d) + (0xFF & y >> 24) * d);
+		var g = Math.floor((0xFF & x >> 16) * (1 - d) + (0xFF & y >> 16) * d);
+		var b = Math.floor((0xFF & x >> 8) * (1 - d) + (0xFF & y >> 8) * d);
+		var a = Math.floor((0xFF & x) * (1 - d) + (0xFF & y) * d);
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	}
 
 	var algs = {
 		nearest : function(eq, data, s) {
 			(typeof s !== 'undefined') || (s = 2);
-			var newData = new Array(data.length * s);
-			for (var y = 0; y < data.length; y++) {
-				for (var i = 0; i < s; i++)
-					newData[y * s + i] = new Array(data[0].length * s);
-				for (var x = 0; x < data[0].length; x++) {
-					for (var yy = 0; yy < s; yy++)
-						for (var xx = 0; xx < s; xx++)
-							newData[y * s + yy][x * s + xx] = data[y][x];
+			var newData = new Array(Math.floor(data.length * s));
+			for (var y = 0; y < newData.length; y++) {
+				newData[y] = new Array(Math.floor(data[0].length * s));
+				var yr = Math.floor(data.length * y / newData.length);
+				for (var x = 0; x < newData[0].length; x++) {
+					var xr = Math.floor(data[0].length * x / newData[0].length);
+					newData[y][x] = data[yr][xr];
+				}
+			}
+			return newData;
+		},
+		linear : function(eq, data, s) {
+			(typeof s !== 'undefined') || (s = 2);
+			var newData = new Array(Math.floor(data.length * s));
+			for (var y = 0; y < newData.length; y++) {
+				newData[y] = new Array(Math.floor(data[0].length * s));
+				var yr = data.length * y / newData.length;
+				for (var x = 0; x < newData[0].length; x++) {
+					var xr = data[0].length * x / newData[0].length;
+					
+					/*
+					 * c0--c01--c1
+					 *      |
+					 *     new
+					 *      |
+					 * c2--c23--c3
+					 */
+					var c0 = data[Math.floor(yr)][Math.floor(xr)];
+					var c1 = (Math.ceil(xr) < data[0].length) ? data[Math.floor(yr)][Math.ceil(xr)] : c0;
+					if (Math.ceil(yr) < data.length) {
+						var c2 = data[Math.ceil(yr)][Math.floor(xr)];
+						var c3 = (Math.ceil(xr) < data[0].length) ? data[Math.ceil(yr)][Math.ceil(xr)] : c2;
+					}
+					else {
+						c2 = c0;
+						c3 = c1;
+					}
+					
+					var c01 = interpolateLinear(c0, c1, xr % 1);
+					var c23 = interpolateLinear(c2, c3, xr % 1);
+					
+					newData[y][x] = interpolateLinear(c01, c23, yr % 1);
 				}
 			}
 			return newData;
@@ -74,9 +115,9 @@ JScaler = (function() {
 					 *   h
 					 */
 					b = (y - 1 >= 0) ? data[y - 1][x] : data[y][x];
-					d = data[y][x - 1] || data[y][x];
+					d = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 					e = data[y][x];
-					f = data[y][x + 1] || data[y][x];
+					f = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					h = (y + 1 < data.length) ? data[y + 1][x] : data[y][x];
 
 					var e0, e1, e2, e3;
@@ -112,27 +153,27 @@ JScaler = (function() {
 					 * g h i
 					 */
 					if (y - 1 >= 0) {
-						a = data[y - 1][x - 1] || data[y - 1][x];
+						a = (x - 1 >= 0) ? data[y - 1][x - 1] : data[y - 1][x];
 						b = data[y - 1][x];
-						c = data[y - 1][x + 1] || data[y - 1][x];
+						c = (x + 1 < data[0].length) ? data[y - 1][x + 1] : data[y - 1][x];
 					}
 					else {
-						a = data[y][x - 1] || data[y][x];
+						a = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						b = data[y][x];
-						c = data[y][x + 1] || data[y][x];
+						c = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 					d = data[y][x - 1] || data[y][x];
 					e = data[y][x];
 					f = data[y][x + 1] || data[y][x];
 					if (y + 1 < data.length) {
-						g = data[y + 1][x - 1] || data[y + 1][x];
+						g = (x - 1 >= 0) ? data[y + 1][x - 1] : data[y + 1][x];
 						h = data[y + 1][x];
-						i = data[y + 1][x + 1] || data[y + 1][x];
+						i = (x + 1 < data[0].length) ? data[y + 1][x + 1] : data[y + 1][x];
 					}
 					else {
-						g = data[y][x - 1] || data[y][x];
+						g = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						h = data[y][x];
-						i = data[y][x + 1] || data[y][x];
+						i = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 
 					var e0, e1, e2, e3, e4, e5, e6, e7, e8;
@@ -187,27 +228,27 @@ JScaler = (function() {
 					 * g h i
 					 */
 					if (y - 1 >= 0) {
-						a = data[y - 1][x - 1] || data[y - 1][x];
+						a = (x - 1 >= 0) ? data[y - 1][x - 1] : data[y - 1][x];
 						b = data[y - 1][x];
-						c = data[y - 1][x + 1] || data[y - 1][x];
+						c = (x + 1 < data[0].length) ? data[y - 1][x + 1] : data[y - 1][x];
 					}
 					else {
-						a = data[y][x - 1] || data[y][x];
+						a = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						b = data[y][x];
-						c = data[y][x + 1] || data[y][x];
+						c = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 					d = data[y][x - 1] || data[y][x];
 					e = data[y][x];
 					f = data[y][x + 1] || data[y][x];
 					if (y + 1 < data.length) {
-						g = data[y + 1][x - 1] || data[y + 1][x];
+						g = (x - 1 >= 0) ? data[y + 1][x - 1] : data[y + 1][x];
 						h = data[y + 1][x];
-						i = data[y + 1][x + 1] || data[y + 1][x];
+						i = (x + 1 < data[0].length) ? data[y + 1][x + 1] : data[y + 1][x];
 					}
 					else {
-						g = data[y][x - 1] || data[y][x];
+						g = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						h = data[y][x];
-						i = data[y][x + 1] || data[y][x];
+						i = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 
 					var e0, e1, e2, e3
@@ -240,27 +281,27 @@ JScaler = (function() {
 					 * g h i
 					 */
 					if (y - 1 >= 0) {
-						a = data[y - 1][x - 1] || data[y - 1][x];
+						a = (x - 1 >= 0) ? data[y - 1][x - 1] : data[y - 1][x];
 						b = data[y - 1][x];
-						c = data[y - 1][x + 1] || data[y - 1][x];
+						c = (x + 1 < data[0].length) ? data[y - 1][x + 1] : data[y - 1][x];
 					}
 					else {
-						a = data[y][x - 1] || data[y][x];
+						a = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						b = data[y][x];
-						c = data[y][x + 1] || data[y][x];
+						c = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 					d = data[y][x - 1] || data[y][x];
 					e = data[y][x];
 					f = data[y][x + 1] || data[y][x];
 					if (y + 1 < data.length) {
-						g = data[y + 1][x - 1] || data[y + 1][x];
+						g = (x - 1 >= 0) ? data[y + 1][x - 1] : data[y + 1][x];
 						h = data[y + 1][x];
-						i = data[y + 1][x + 1] || data[y + 1][x];
+						i = (x + 1 < data[0].length) ? data[y + 1][x + 1] : data[y + 1][x];
 					}
 					else {
-						g = data[y][x - 1] || data[y][x];
+						g = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						h = data[y][x];
-						i = data[y][x + 1] || data[y][x];
+						i = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 
 					e0 = eq(d, a, b) ? a : e;
@@ -301,27 +342,27 @@ JScaler = (function() {
 					 * g h i
 					 */
 					if (y - 1 >= 0) {
-						a = data[y - 1][x - 1] || data[y - 1][x];
+						a = (x - 1 >= 0) ? data[y - 1][x - 1] : data[y - 1][x];
 						b = data[y - 1][x];
-						c = data[y - 1][x + 1] || data[y - 1][x];
+						c = (x + 1 < data[0].length) ? data[y - 1][x + 1] : data[y - 1][x];
 					}
 					else {
-						a = data[y][x - 1] || data[y][x];
+						a = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						b = data[y][x];
-						c = data[y][x + 1] || data[y][x];
+						c = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 					d = data[y][x - 1] || data[y][x];
 					e = data[y][x];
 					f = data[y][x + 1] || data[y][x];
 					if (y + 1 < data.length) {
-						g = data[y + 1][x - 1] || data[y + 1][x];
+						g = (x - 1 >= 0) ? data[y + 1][x - 1] : data[y + 1][x];
 						h = data[y + 1][x];
-						i = data[y + 1][x + 1] || data[y + 1][x];
+						i = (x + 1 < data[0].length) ? data[y + 1][x + 1] : data[y + 1][x];
 					}
 					else {
-						g = data[y][x - 1] || data[y][x];
+						g = (x - 1 >= 0) ? data[y][x - 1] : data[y][x];
 						h = data[y][x];
-						i = data[y][x + 1] || data[y][x];
+						i = (x + 1 < data[0].length) ? data[y][x + 1] : data[y][x];
 					}
 
 					e0 = eq(d, a, b) ? a : e;
@@ -360,7 +401,7 @@ JScaler = (function() {
 			return this;
 		},
 		scale : function(alg, s) {
-			var eq = (function(threshold){ 
+			var eq = (function(threshold) {
 				return function(x, y, z) {
 					var dr = Math.abs((0xFF & x >> 24) - (0xFF & y >> 24));
 					var dg = Math.abs((0xFF & x >> 16) - (0xFF & y >> 16));
