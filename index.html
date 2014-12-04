@@ -30,7 +30,7 @@
 	}
 </script>
 </head>
-<body>
+<body style="background-color: #ccc;" >
 	<img id="image" src="image.png" alt="pixel art" />
 	<br />
 	Choose Image:
@@ -38,14 +38,14 @@
 	<br /> Threshold:
 	<input id="threshold" type="number" value="0" />
 	<hr style="background: #000; border: 0; height: 1px;" />
-	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', parseFloat(document.getElementById('nearest').value)).render(canvas).reset(); return false;">Nearest-Neighbor</a>
-	<input id="nearest" type="number" step="any" value="0" />
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('nearest', parseFloat(document.getElementById('nearest').value)).render(canvas).reset(); return false;">Nearest</a>
+	<input id="nearest" type="number" step="any" min="0.001" value="2" />
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('linear', parseFloat(document.getElementById('linear').value)).render(canvas).reset(); return false;">Linear</a>
-	<input id="linear" type="number" step="any" value="0" />
+	<input id="linear" type="number" step="any" min="0.001" value="2" />
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('cubic', parseFloat(document.getElementById('cubic').value)).render(canvas).reset(); return false;">Cubic</a>
-	<input id="cubic" type="number" step="any" value="0" />
+	<input id="cubic" type="number" step="any" min="0.001" value="2" />
 	<hr style="background: #000; border: 0; height: 1px;" />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('AdvMAME', parseInt(document.getElementById('advmame').value)).render(canvas).reset(); return false;">AdvMAME/Scale</a>
 	<select id="advmame">
@@ -62,8 +62,7 @@
 	</select>
 	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('Eagle3xr').render(canvas).reset(); return false;">Eagle (3xr)</a>
-	<br />
-
+	<hr style="background: #000; border: 0; height: 1px;" />
 	<canvas id="canvas"></canvas>
 </body>
 </html>
