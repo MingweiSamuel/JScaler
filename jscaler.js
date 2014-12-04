@@ -242,18 +242,18 @@ JScaler = (function() {
 
 					var e0, e1, e2, e3;
 					if (!(eq(c01, c21) || eq(c10, c12))) {
-						e00 = eq(c10, c01) ? c10 : c11;
-						e01 = eq(c01, c12) ? c12 : c11;
-						e10 = eq(c10, c21) ? c10 : c11;
-						e11 = eq(c21, c12) ? c12 : c11;
+						e0 = eq(c10, c01) ? c10 : c11;
+						e1 = eq(c01, c12) ? c12 : c11;
+						e2 = eq(c10, c21) ? c10 : c11;
+						e3 = eq(c21, c12) ? c12 : c11;
 					}
 					else
-						e00 = e01 = e10 = e11 = c11;
+						e0 = e1 = e2 = e3 = c11;
 
-					newData[y * 2][x * 2] = e00;
-					newData[y * 2][x * 2 + 1] = e01;
-					newData[y * 2 + 1][x * 2] = e10;
-					newData[y * 2 + 1][x * 2 + 1] = e11;
+					newData[y * 2][x * 2] = e0;
+					newData[y * 2][x * 2 + 1] = e1;
+					newData[y * 2 + 1][x * 2] = e2;
+					newData[y * 2 + 1][x * 2 + 1] = e3;
 				}
 			}
 			return newData;
