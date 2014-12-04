@@ -59,16 +59,20 @@ JScaler = (function() {
 		var ya = 0xFF & y;
 		var zr = 0xFF & z >> 24;
 		var zg = 0xFF & z >> 16;
-		var za = 0xFF & z >> 8;
-		var zb = 0xFF & z;
+		var zb = 0xFF & z >> 8;
+		var za = 0xFF & z;
 		var wr = 0xFF & w >> 24;
 		var wg = 0xFF & w >> 16;
-		var wa = 0xFF & w >> 8;
-		var wb = 0xFF & w;
-		var r = 0xFF & (yr + 0.5 * d * (zr - xr + d * (2 * xr - 5 * yr + 4 * zr - wr + d * (3 * (yr - zr) + wr - xr))));
-		var g = 0xFF & (yg + 0.5 * d * (zg - xg + d * (2 * xg - 5 * yg + 4 * zg - wg + d * (3 * (yg - zg) + wg - xg))));
-		var b = 0xFF & (yb + 0.5 * d * (zb - xb + d * (2 * xb - 5 * yb + 4 * zb - wb + d * (3 * (yb - zb) + wb - xb))));
-		var a = 0xFF & (ya + 0.5 * d * (za - xa + d * (2 * xa - 5 * ya + 4 * za - wa + d * (3 * (ya - za) + wa - xa))));
+		var wb = 0xFF & w >> 8;
+		var wa = 0xFF & w;
+		var r = yr + 0.5 * d * (zr - xr + d * (2 * xr - 5 * yr + 4 * zr - wr + d * (3 * (yr - zr) + wr - xr)));
+		var g = yg + 0.5 * d * (zg - xg + d * (2 * xg - 5 * yg + 4 * zg - wg + d * (3 * (yg - zg) + wg - xg)));
+		var b = yb + 0.5 * d * (zb - xb + d * (2 * xb - 5 * yb + 4 * zb - wb + d * (3 * (yb - zb) + wb - xb)));
+		var a = ya + 0.5 * d * (za - xa + d * (2 * xa - 5 * ya + 4 * za - wa + d * (3 * (ya - za) + wa - xa)));
+		r = (r > 255) ? 255 : (r < 0) ? 0 : r;
+		g = (g > 255) ? 255 : (g < 0) ? 0 : g;
+		b = (b > 255) ? 255 : (b < 0) ? 0 : b;
+		a = (a > 255) ? 255 : (a < 0) ? 0 : a;
 		return (r << 24) | (g << 16) | (b << 8) | a;
 	}
 
@@ -155,45 +159,48 @@ JScaler = (function() {
 					var r1 = (x3 < data[0].length) ? data[y1][x3] : r5;
 
 					//y0
+					var l4, l0, r4, r0;
 					if (y0 >= 0) {
-						var l4 = data[y0][x1];
-						var l0 = (x0 >= 0) ? data[y0][x0] : l4;
-						var r4 = (x2 < data[0].length) ? data[y0][x2] : l4;
-						var r0 = (x3 < data[0].length) ? data[y0][x3] : r4;
+						l4 = data[y0][x1];
+						l0 = (x0 >= 0) ? data[y0][x0] : l4;
+						r4 = (x2 < data[0].length) ? data[y0][x2] : l4;
+						r0 = (x3 < data[0].length) ? data[y0][x3] : r4;
 					}
 					else {
-						var l4 = l5;
-						var l0 = l1;
-						var r4 = r5;
-						var r0 = r1;
+						l4 = l5;
+						l0 = l1;
+						r4 = r5;
+						r0 = r1;
 					}
 
 					//y2
+					var l6, l2, r6, r2;
 					if (y2 < data.length) {
-						var l6 = data[y2][x1];
-						var l2 = (x0 >= 0) ? data[y2][x0] : l6;
-						var r6 = (x2 < data[0].length) ? data[y2][x2] : l6;
-						var r2 = (x3 < data[0].length) ? data[y2][x3] : r6;
+						l6 = data[y2][x1];
+						l2 = (x0 >= 0) ? data[y2][x0] : l6;
+						r6 = (x2 < data[0].length) ? data[y2][x2] : l6;
+						r2 = (x3 < data[0].length) ? data[y2][x3] : r6;
 					}
 					else {
-						var l6 = l5;
-						var l2 = l1;
-						var r6 = r5;
-						var r2 = r1;
+						l6 = l5;
+						l2 = l1;
+						r6 = r5;
+						r2 = r1;
 					}
 
 					//y3
+					var l7, l3, r7, r3;
 					if (y3 < data.length) {
-						var l7 = data[y3][x1];
-						var l3 = (x0 >= 0) ? data[y3][x0] : l7;
-						var r7 = (x2 < data[0].length) ? data[y3][x2] : l7;
-						var r3 = (x3 < data[0].length) ? data[y3][x3] : r7;
+						l7 = data[y3][x1];
+						l3 = (x0 >= 0) ? data[y3][x0] : l7;
+						r7 = (x2 < data[0].length) ? data[y3][x2] : l7;
+						r3 = (x3 < data[0].length) ? data[y3][x3] : r7;
 					}
 					else {
-						var l7 = l6;
-						var l3 = l2;
-						var r7 = r6;
-						var r3 = r2;
+						l7 = l6;
+						l3 = l2;
+						r7 = r6;
+						r3 = r2;
 					}
 
 					var d = xr % 1;
