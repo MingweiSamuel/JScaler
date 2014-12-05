@@ -1,4 +1,5 @@
-JScaler = (function() {
+"use strict";
+var JScaler = (function() {
 	function getData(image) {
 		var imgData;
 		if (image instanceof HTMLImageElement) {
