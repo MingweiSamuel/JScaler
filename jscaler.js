@@ -75,6 +75,14 @@ JScaler = (function() {
 		a = (a > 255) ? 255 : (a < 0) ? 0 : a;
 		return (r << 24) | (g << 16) | (b << 8) | a;
 	}
+	function interpolateQuadIO(x, y, d) {
+		d =  d < 0.5 ? 2 * d * d : -2 * d * (d - 2) - 1;
+		var r = Math.floor((0xFF & x >> 24) * (1 - d) + (0xFF & y >> 24) * d);
+		var g = Math.floor((0xFF & x >> 16) * (1 - d) + (0xFF & y >> 16) * d);
+		var b = Math.floor((0xFF & x >> 8) * (1 - d) + (0xFF & y >> 8) * d);
+		var a = Math.floor((0xFF & x) * (1 - d) + (0xFF & y) * d);
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	}
 
 	var algs = {
 		nearest : function(eq, data, sx, sy) {
@@ -130,6 +138,46 @@ JScaler = (function() {
 			}
 			return newData;
 		},
+		quadio : function(eq, data, sx, sy) {
+			(typeof sy === 'number') || (sy = sx);
+			var newData = new Array(Math.round(data.length * sy));
+			for (var y = 0; y < newData.length; y++) {
+				newData[y] = new Array(Math.round(data[0].length * sx));
+				var yr = data.length / newData.length * (y + 0.5) - 0.5;
+				for (var x = 0; x < newData[0].length; x++) {
+					var xr = data[0].length / newData[0].length * (x + 0.5) - 0.5;
+
+					/* 
+					 * cYX
+					 * 
+					 * c00--m0--c01
+					 *      |
+					 *     new
+					 *      |
+					 * c10--m1--c11
+					 */
+					var x0 = Math.floor(xr);
+					x0 >= 0 || x0++;
+					var x1 = Math.ceil(xr);
+					x1 < data[0].length || x1--;
+					var y0 = Math.floor(yr);
+					y0 >= 0 || y0++;
+					var y1 = Math.ceil(yr);
+					y1 < data.length || y1--;
+
+					var c00 = data[y0][x0];
+					var c01 = data[y0][x1];
+					var c10 = data[y1][x0];
+					var c11 = data[y1][x1];
+
+					var m0 = interpolateQuadIO(c00, c01, xr % 1);
+					var m1 = interpolateQuadIO(c10, c11, xr % 1);
+
+					newData[y][x] = interpolateQuadIO(m0, m1, yr % 1);
+				}
+			}
+			return newData;
+		},
 		cubic : function(eq, data, sx, sy) {
 			(typeof sy === 'number') || (sy = sx);
 			var newData = new Array(Math.round(data.length * sy));
@@ -171,22 +219,22 @@ JScaler = (function() {
 					x2 < data[0].length || (x2 = data[0].length - 1);
 					var x3 = Math.ceil(xr) + 1;
 					x3 < data[0].length || (x3 = data[0].length - 1);
-					
+
 					var c00 = data[y0][x0];
 					var c01 = data[y0][x1];
 					var c02 = data[y0][x2];
 					var c03 = data[y0][x3];
-					
+
 					var c10 = data[y1][x0];
 					var c11 = data[y1][x1];
 					var c12 = data[y1][x2];
 					var c13 = data[y1][x3];
-					
+
 					var c20 = data[y2][x0];
 					var c21 = data[y2][x1];
 					var c22 = data[y2][x2];
 					var c23 = data[y2][x3];
-					
+
 					var c30 = data[y3][x0];
 					var c31 = data[y3][x1];
 					var c32 = data[y3][x2];
@@ -227,13 +275,13 @@ JScaler = (function() {
 					 * c10 c11 c12
 					 *     c21
 					 */
-					
+
 					var x0 = (x >= 1) ? x - 1 : x;
 					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-					
+
 					var y0 = (y >= 1) ? y - 1 : y;
 					var y2 = (y < data.length - 1) ? y + 1 : y;
-					
+
 					var c01 = data[y0][x];
 					var c10 = data[y][x0];
 					var c11 = data[y][x];
@@ -265,19 +313,19 @@ JScaler = (function() {
 				newData[y * 3 + 1] = new Array(data[0].length * 3);
 				newData[y * 3 + 2] = new Array(data[0].length * 3);
 				for (var x = 0; x < data[0].length; x++) {
-				
+
 					/*
 					 * c00 c01 c02
 					 * c10 c11 c12
 					 * c20 c21 c22
 					 */
-					
+
 					var x0 = (x >= 1) ? x - 1 : x;
 					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-					
+
 					var y0 = (y >= 1) ? y - 1 : y;
 					var y2 = (y < data.length - 1) ? y + 1 : y;
-					
+
 					var c00 = data[y0][x0];
 					var c01 = data[y0][x];
 					var c02 = data[y0][x2];
@@ -334,19 +382,19 @@ JScaler = (function() {
 				newData[y * 2] = new Array(data[0].length * 2);
 				newData[y * 2 + 1] = new Array(data[0].length * 2);
 				for (var x = 0; x < data[0].length; x++) {
-					
+
 					/*
 					 * c00 c01 c02
 					 * c10 c11 c12
 					 * c20 c21 c22
 					 */
-					
+
 					var x0 = (x >= 1) ? x - 1 : x;
 					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-					
+
 					var y0 = (y >= 1) ? y - 1 : y;
 					var y2 = (y < data.length - 1) ? y + 1 : y;
-					
+
 					var c00 = data[y0][x0];
 					var c01 = data[y0][x];
 					var c02 = data[y0][x2];
@@ -377,19 +425,19 @@ JScaler = (function() {
 				newData[y * 3 + 1] = new Array(data[0].length * 3);
 				newData[y * 3 + 2] = new Array(data[0].length * 3);
 				for (var x = 0; x < data[0].length; x++) {
-					
+
 					/*
 					 * c00 c01 c02
 					 * c10 c11 c12
 					 * c20 c21 c22
 					 */
-					
+
 					var x0 = (x >= 1) ? x - 1 : x;
 					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-					
+
 					var y0 = (y >= 1) ? y - 1 : y;
 					var y2 = (y < data.length - 1) ? y + 1 : y;
-					
+
 					var c00 = data[y0][x0];
 					var c01 = data[y0][x];
 					var c02 = data[y0][x2];
@@ -430,19 +478,19 @@ JScaler = (function() {
 				newData[y * 3 + 1] = new Array(data[0].length * 3);
 				newData[y * 3 + 2] = new Array(data[0].length * 3);
 				for (var x = 0; x < data[0].length; x++) {
-					
+
 					/*
 					 * c00 c01 c02
 					 * c10 c11 c12
 					 * c20 c21 c22
 					 */
-					
+
 					var x0 = (x >= 1) ? x - 1 : x;
 					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-					
+
 					var y0 = (y >= 1) ? y - 1 : y;
 					var y2 = (y < data.length - 1) ? y + 1 : y;
-					
+
 					var c00 = data[y0][x0];
 					var c01 = data[y0][x];
 					var c02 = data[y0][x2];

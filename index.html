@@ -44,6 +44,9 @@
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('linear', parseFloat(document.getElementById('linear').value)).render(canvas).reset(); return false;">Linear</a>
 	<input id="linear" type="number" step="any" min="0.001" value="2" />
 	<br />
+	<a href="#" onClick="scaler.setThreshold(thresh()).scale('quadio', parseFloat(document.getElementById('quadio').value)).render(canvas).reset(); return false;">QuadIO</a>
+	<input id="quadio" type="number" step="any" min="0.001" value="2" />
+	<br />
 	<a href="#" onClick="scaler.setThreshold(thresh()).scale('cubic', parseFloat(document.getElementById('cubic').value)).render(canvas).reset(); return false;">Cubic</a>
 	<input id="cubic" type="number" step="any" min="0.001" value="2" />
 	<hr style="background: #000; border: 0; height: 1px;" />
