@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JScaler Example Page</title>
+<script type="text/javascript" src="jscaler2.js"></script>
+<script type="text/javascript">
+	function thresh() {
+		return parseInt(document.getElementById('threshold').value);
+	}
+	window.onload = function() {
+		scaler = jScaler(document.getElementById('image'));
+		canvas = document.getElementById('canvas');
+	};
+
+	function upload() {
+		var file = document.querySelector('input[type=file]').files[0]; //sames as here
+		var reader = new FileReader();
+
+		reader.onloadend = function() {
+			var img = document.getElementById('image');
+			img.onload = function() {
+				scaler = jScaler(img);
+			};
+			img.src = reader.result;
+		}
+
+		if (file)
+			reader.readAsDataURL(file); //reads the data as a URL
+	}
+	
+	function scale(alg) {
+		var start = new Date().getTime();
+		var scaleElement = document.getElementById(alg);
+		var scale = (!!scaleElement) ? parseFloat(scaleElement.value) : null;
+		scaler.setThreshold(parseInt(document.getElementById('threshold').value)).scale(alg, scale).render(canvas).reset();
+		document.getElementById('time').textContent = 'Scaling (' + alg + (scale || '') + ') took ' + (new Date().getTime() - start) + ' ms.';
+		return false;
+	}
+</script>
+</head>
+<body style="background-color: #ccc;" >
+	<img id="image" src="image.png" alt="pixel art" />
+	<br />
+	Choose Image:
+	<input type="file" accept="file/image" onChange="upload();" />
+	<br /> Threshold:
+	<input id="threshold" type="number" value="0" />
+	<hr style="background: #000; border: 0; height: 1px;" />
+	<a href="#" onClick="return scale('nearest');">Nearest</a>
+	<input id="nearest" type="number" step="any" min="0.001" value="2" />
+	<br />
+	<a href="#" onClick="return scale('linear');">Linear</a>
+	<input id="linear" type="number" step="any" min="0.001" value="2" />
+	<br />
+	<a href="#" onClick="return scale('quadio');">QuadIO</a>
+	<input id="quadio" type="number" step="any" min="0.001" value="2" />
+	<br />
+	<a href="#" onClick="return scale('cubic');">Cubic</a>
+	<input id="cubic" type="number" step="any" min="0.001" value="2" />
+	<hr style="background: #000; border: 0; height: 1px;" />
+	<a href="#" onClick="return scale('advmame');">AdvMAME/Scale</a>
+	<select id="advmame">
+		<option value="2">2x</option>
+		<option value="3">3x</option>
+		<option value="4">4x</option>
+	</select>
+	<br />
+	<a href="#" onClick="return scale('eagle');">Eagle</a>
+	<select id="eagle">
+		<option value="2">2x</option>
+		<option value="3">3x</option>
+		<option value="4">4x</option>
+	</select>
+	<br />
+	<a href="#" onClick="return scale('eagle3xr');">Eagle (3xr)</a>
+	<hr style="background: #000; border: 0; height: 1px;" />
+	<span id="time"></span>
+	<br />
+	<canvas id="canvas"></canvas>
+</body>
+</html>

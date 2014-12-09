@@ -1,0 +1,62 @@
+default = {
+	algorithm : 'none',
+	interpolator : 'nearest',
+	scale : 2,
+	color : 'rgb',
+	threshold : 0,
+	edge : 'nearest'
+};
+
+color format:
+0xAARRGGBB
+
+
+algorithm:
+	'none'
+	'advmame'
+	'eagle'
+	'cubic'
+interpolator:
+	'none'
+	'nearest'
+	'linear'
+	'quadio'
+	'dither'
+	function(% a) returns %
+scale: float
+color:
+	'rgb'
+	'yuv'
+threshold: number uint8
+edge:
+	'nearest'
+	'wrap'
+	custom:
+	'#AARRGGBB'
+	'#RRGGBB'
+	0xAARRGGBB
+	0xRRGGBB
+
+
+RGB difference:
+return Math.round(Math.sqrt(r * r + g * g + b * b) * .577350);
+
+YUV difference:
+var y = r *  .299000 + g *  .587000 + b *  .114000;
+var u = r * -.168736 + g * -.331264 + b *  .500000;
+var v = r *  .500000 + g * -.418688 + b * -.081312;
+return y + 7 * u / 48 + 6 * v / 48;
+return Math.round(y + u * .145833 + v * .125000);
+
+//
+
+for (var r = 0; r <= 255; r += 127.5){
+for (var g = 0; g <= 255; g += 127.5){
+for (var b = 0; b <= 255; b += 127.5){
+var y = r *  .299000 + g *  .587000 + b *  .114000;
+var u = r * -.168736 + g * -.331264 + b *  .500000;
+var v = r *  .500000 + g * -.418688 + b * -.081312;
+console.log((y|0) + ' ' + (u|0) + ' '+ (v|0));
+}
+}
+}

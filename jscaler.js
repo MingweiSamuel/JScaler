@@ -39,6 +39,7 @@ var JScaler = (function() {
 	 * Linear interpolation x is the first color y is the second color d is the
 	 * distance (0-1) between x and y
 	 */
+	var asdf = 0;
 	function interpolateLinear(x, y, d) {
 		var r = Math.floor((0xFF & x >> 24) * (1 - d) + (0xFF & y >> 24) * d);
 		var g = Math.floor((0xFF & x >> 16) * (1 - d) + (0xFF & y >> 16) * d);
@@ -77,7 +78,7 @@ var JScaler = (function() {
 		return (r << 24) | (g << 16) | (b << 8) | a;
 	}
 	function interpolateQuadIO(x, y, d) {
-		d =  d < 0.5 ? 2 * d * d : -2 * d * (d - 2) - 1;
+		d = d < 0.5 ? 2 * d * d : -2 * d * (d - 2) - 1;
 		var r = Math.floor((0xFF & x >> 24) * (1 - d) + (0xFF & y >> 24) * d);
 		var g = Math.floor((0xFF & x >> 16) * (1 - d) + (0xFF & y >> 16) * d);
 		var b = Math.floor((0xFF & x >> 8) * (1 - d) + (0xFF & y >> 8) * d);
@@ -537,15 +538,25 @@ var JScaler = (function() {
 			this.threshold = threshold;
 			return this;
 		},
+		scale2 : function(argsObj) {
+			var args = {
+				algorithm : 'none',
+				interpolation : 'nearest',
+				scale : 2,
+				color : 'rgb',
+				threshold : 0,
+				edge : 'nearest'
+			};
+		},
 		scale : function(alg, s, sy) {
-			/*if (typeof s === 'number') {
-				if (Math.round(this.data[0].length * s) < 2)
+			if (typeof s === 'number') {
+				if (Math.round(this.data[0].length * s) < 1)
 					throw 'scale is too small';
-				if (typeof sy === 'undefined' && Math.round(this.data.length) * s < 2)
+				if (typeof sy === 'undefined' && Math.round(this.data.length) * s < 1)
 					throw 'scale is too small';
-				if (typeof sy === 'number' && Math.round(this.data.length) * sy < 2)
+				if (typeof sy === 'number' && Math.round(this.data.length) * sy < 1)
 					throw 'scale is too small';
-			}*/
+			}
 			if (typeof alg === 'string' && typeof algs[alg.toLowerCase()] === 'undefined')
 				throw alg + 'is not a valid algorithm';
 			var eq = (function(threshold) {
