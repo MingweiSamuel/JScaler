@@ -45,27 +45,25 @@ var jScaler = (function() {
 		var w = Math.floor((0xFF & a) * (1 - d) + (0xFF & b) * d);
 		return (x << 24) | (y << 16) | (z << 8) | w;
 	}
-	function translate(data, translator) {
-		for (var y = 0; y < data.length; y++)
-			for (var x = 0; x < data[0].length; x++)
-				data[y][x] = translator(data[y][x]);
-		return data;
+	function eq(difference, threshold, x, y, z) {
+		if (difference(x, y) <= threshold) {
+			if (typeof z === 'undefined')
+				return true;
+			return (difference(x, z) <= threshold) && (difference(y, z) <= threshold);
+		}
 	}
 
 	var colors = {
 		//0xAARRGGBB
 		rgb : {
-			fromARGB : function(c) {
-				return c;
-			},
-			toARGB : function(c) {
-				return c;
-			},
 			difference : function(a, b) {
 				var r = Math.abs((0xFF0000 & a) - (0xFF0000 & b));
 				var g = Math.abs((0xFF00 & a) - (0xFF00 & b));
 				var b = Math.abs((0xFF & a) - (0xFF & b));
 				return Math.round(Math.sqrt(r * r + g * g + b * b) * .577350); //could speed up by using a custom sqrt
+			},
+			mix : function(x, y, d) {
+				return mixColors(x, y, d);
 			}
 		},
 		yuv : {
@@ -94,13 +92,24 @@ var jScaler = (function() {
 				b < 0 ? (b = 0) : (b > 255) && (b = 255);
 				return (0xFF000000 & c) | ((0xFF & r) << 16) | ((0xFF & g) << 8) | (0xFF & b);
 			},
-			difference : function(a, b) {
-				var y = Math.abs((0xFF0000 & a) - (0xFF0000 & b));
-				var u = Math.abs((0xFF00 & a) - (0xFF00 & b));
-				var v = Math.abs((0xFF & a) - (0xFF & b));
+			difference : function(x, y) {
+				x = this.fromARGB(x);
+				y = this.fromARGB(y);
+				var y = Math.abs((0xFF0000 & x) - (0xFF0000 & y));
+				var u = Math.abs((0xFF00 & x) - (0xFF00 & y));
+				var v = Math.abs((0xFF & x) - (0xFF & y));
 				u -= 127.5;
 				v -= 127.5;
 				return Math.round(y + u * .145833 + v * .125000);
+			},
+			mix : function(x, y, d) {
+				if (d === 0)
+					return x;
+				if (d === 1)
+					return y;
+				x = this.fromARGB(x);
+				y = this.fromARGB(y);
+				return this.toARGB(mixColors(x, y, d));
 			}
 		}
 	}
@@ -113,24 +122,24 @@ var jScaler = (function() {
 			return ((pos % max) + max) % max;
 		}
 	}
-	
+
 	var interpolators = {
-			nearest : function(d) {
-				return Math.round(d);
-			},
-			linear : function(d) {
-				return d;
-			},
-			quadio : function(d) {
-				return d < 0.5 ? 2 * d * d : -2 * d * (d - 2) - 1;
-			},
-			dither : function(d) {
-				return Math.random() < d;
-			}
+		nearest : function(d) {
+			return Math.round(d);
+		},
+		linear : function(d) {
+			return d;
+		},
+		quadio : function(d) {
+			return d < 0.5 ? 2 * d * d : -2 * d * (d - 2) - 1;
+		},
+		dither : function(d) {
+			return Math.random() < d;
 		}
-	
-	var algorithms = {
-		none : function(data) {
+	}
+
+	var iterators = {
+		square2 : function(data, handler) {
 			var newData = new Array(Math.round(data.length * this.scale));
 			for (var y = 0; y < newData.length; y++) {
 				newData[y] = new Array(Math.round(data[0].length * this.scale));
@@ -139,64 +148,72 @@ var jScaler = (function() {
 					var xr = data[0].length / newData[0].length * (x + 0.5) - 0.5;
 
 					var x0 = this.edge(Math.floor(xr), data[0].length);
-					var x1 = this.edge(Math.ceil(xr), data[0].length);
+					var x1 = this.edge(Math.floor(xr) + 1, data[0].length);
 					var y0 = this.edge(Math.floor(yr), data.length);
-					var y1 = this.edge(Math.ceil(yr), data.length);
-					
-					var c00 = data[y0][x0];
-					var c01 = data[y0][x1];
-					var c10 = data[y1][x0];
-					var c11 = data[y1][x1];
+					var y1 = this.edge(Math.floor(yr) + 1, data.length);
 
-					var m0 = mixColors(c00, c01, this.interpolator(fpart(xr)));
-					var m1 = mixColors(c10, c11, this.interpolator(fpart(xr)));
-
-					newData[y][x] = mixColors(m0, m1, this.interpolator(fpart(yr)));
+					handler.call(this, newData, x, y, fpart(xr), fpart(yr), data[y0][x0], data[y0][x1], data[y1][x0], data[y1][x1]);
 				}
 			}
 			return newData;
 		},
-		eagle2x : function(data) {
-			var newData = new Array(data.length * 2);
-			for (var y = 0; y < data.length; y++) {
-				newData[y * 2] = new Array(data[0].length * 2);
-				newData[y * 2 + 1] = new Array(data[0].length * 2);
-				for (var x = 0; x < data[0].length; x++) {
+		square3 : function(data, handler) {
+			var newData = new Array(Math.round(data.length * this.scale));
+			for (var y = 0; y < newData.length; y++)
+				newData[y] = new Array(Math.round(data[0].length * this.scale));
+			
+			for (var y = 0; y < newData.length; y++) {
+				var yr = data.length / newData.length * (y + 0.5) - 0.5;
+				for (var x = 0; x < newData[0].length; x++) {
+					var xr = data[0].length / newData[0].length * (x + 0.5) - 0.5;
 
-					/*
-					 * c00 c01 c02
-					 * c10 c11 c12
-					 * c20 c21 c22
-					 */
+					var x0 = this.edge(Math.floor(xr), data[0].length);
+					var x1 = this.edge(Math.floor(xr) + 1, data[0].length);
+					var x2 = this.edge(Math.floor(xr) + 2, data[0].length);
+					var y0 = this.edge(Math.floor(yr), data.length);
+					var y1 = this.edge(Math.floor(yr) + 1, data.length);
+					var y2 = this.edge(Math.floor(yr) + 2, data.length);
 
-					var x0 = (x >= 1) ? x - 1 : x;
-					var x2 = (x < data[0].length - 1) ? x + 1 : x;
-
-					var y0 = (y >= 1) ? y - 1 : y;
-					var y2 = (y < data.length - 1) ? y + 1 : y;
-
-					var c00 = data[y0][x0];
-					var c01 = data[y0][x];
-					var c02 = data[y0][x2];
-					var c10 = data[y][x0];
-					var c11 = data[y][x];
-					var c12 = data[y][x2];
-					var c20 = data[y2][x0];
-					var c21 = data[y2][x];
-					var c22 = data[y2][x2];
-
-					var e0 = eq(c10, c00, c01) ? c00 : c11;
-					var e1 = eq(c01, c02, c12) ? c02 : c11;
-					var e2 = eq(c10, c20, c21) ? c20 : c11;
-					var e3 = eq(c21, c22, c12) ? c22 : c11;
-
-					newData[y * 2][x * 2] = e0;
-					newData[y * 2][x * 2 + 1] = e1;
-					newData[y * 2 + 1][x * 2] = e2;
-					newData[y * 2 + 1][x * 2 + 1] = e3;
+					handler.call(this, newData, x, y, fpart(xr), fpart(yr), data[y0][x0], data[y0][x1], data[y0][x2], data[y1][x0], data[y1][x1], data[y1][x2], data[y2][x0], data[y2][x1], data[y2][x2]);
 				}
 			}
 			return newData;
+		}
+	}
+
+	var algorithms = {
+		none : function(data) {
+			return iterators.square2.call(this, data, function(newData, x, y, xf, yf, c00, c01, c10, c11) {
+				var m0 = this.color.mix(c00, c01, this.interpolator(xf));
+				var m1 = this.color.mix(c10, c11, this.interpolator(xf));
+
+				newData[y][x] = this.color.mix(m0, m1, this.interpolator(yf));
+			});
+		},
+		eagle2x : function(data) {
+			this.scale = 2;
+			return iterators.square3.call(this, data, function(newData, x, y, xf, yf, c00, c01, c02, c10, c11, c12, c20, c21, c22) {
+				if (x % 2 == 1 || y % 2 == 1)
+					return;
+				
+				/*
+				 * c00 c01 c02
+				 * c10 c11 c12
+				 * c20 c21 c22
+				 */
+				
+				var e0 = eq(this.color.difference, this.threshold, c10, c00, c01) ? this.color.mix(this.color.mix(c10, c01, 0.5), c00, 0.5) : c11;
+				var e1 = eq(this.color.difference, this.threshold, c01, c02, c12) ? this.color.mix(this.color.mix(c01, c12, 0.5), c02, 0.5) : c11;
+				var e2 = eq(this.color.difference, this.threshold, c10, c20, c21) ? this.color.mix(this.color.mix(c10, c21, 0.5), c20, 0.5) : c11;
+				var e3 = eq(this.color.difference, this.threshold, c21, c22, c12) ? this.color.mix(this.color.mix(c21, c12, 0.5), c22, 0.5) : c11;
+				
+				newData[y][x] = e0;
+				newData[y][x + 1] = e1;
+				newData[y + 1][x] = e2;
+				newData[y + 1][x + 1] = e3;
+
+				return newData;
+			});
 		}
 	}
 
@@ -226,10 +243,8 @@ var jScaler = (function() {
 			scaler.color = colors[args.color.toLowerCase()];
 			scaler.threshold = 0;
 			scaler.edge = edgers[args.edge.toLowerCase()];
-			
-			this.data = translate(this.data, scaler.color.fromARGB);
+
 			this.data = algorithm.call(scaler, this.data);
-			this.data = translate(this.data, scaler.color.toARGB);
 			return this;
 		},
 		scale : function(alg, s, sy) {
